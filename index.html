@@ -1265,11 +1265,65 @@
     if (!wasOpen) item.classList.add('open');
   }
 
-  // Form submit
-  function handleSubmit(e) {
+  // ─── TELEGRAM CONFIG ───────────────────────────────────────────
+  const TG_BOT_TOKEN = '8852663748:AAHup6Xx5w01Mg3kGHW-uE2LQebmMfeWRCI';
+  const TG_CHAT_ID   = '367239099';
+  // ────────────────────────────────────────────────────────────────
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    document.getElementById('bookingForm').style.display = 'none';
-    document.getElementById('formSuccess').classList.add('show');
+
+    const form = document.getElementById('bookingForm');
+    const inputs = form.querySelectorAll('input, select, textarea');
+
+    const name    = inputs[0].value.trim();
+    const phone   = inputs[1].value.trim();
+    const date    = inputs[2].value;
+    const time    = inputs[3].value;
+    const guests  = inputs[4].value;
+    const hall    = inputs[5].value || 'Без різниці';
+    const comment = inputs[6].value.trim() || '—';
+
+    const text =
+`🍽 <b>Нова заявка — Золота Гора</b>
+
+👤 <b>Ім'я:</b> ${name}
+📞 <b>Телефон:</b> ${phone}
+📅 <b>Дата:</b> ${date}
+⏰ <b>Час:</b> ${time}
+👥 <b>Гостей:</b> ${guests}
+🏛 <b>Зал:</b> ${hall}
+💬 <b>Побажання:</b> ${comment}`;
+
+    const submitBtn = form.querySelector('.form-submit');
+    submitBtn.textContent = 'Надсилаємо...';
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: TG_CHAT_ID,
+          text: text,
+          parse_mode: 'HTML'
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.ok) {
+        form.style.display = 'none';
+        document.getElementById('formSuccess').classList.add('show');
+      } else {
+        throw new Error(data.description || 'Telegram error');
+      }
+    } catch (err) {
+      console.error('Помилка відправки в Telegram:', err);
+      submitBtn.textContent = 'Надіслати заявку →';
+      submitBtn.disabled = false;
+      alert('Щось пішло не так. Будь ласка, зателефонуйте нам або спробуйте ще раз.');
+    }
   }
 
   // Nav shrink on scroll
